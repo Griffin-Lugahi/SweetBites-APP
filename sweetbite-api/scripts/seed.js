@@ -1,9 +1,10 @@
 // Runs db/seed.sql directly through the pg driver — see migrate.js for why
 // this replaced the old psql-based npm script.
-require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+
+require('dotenv').config({ override: false });
 
 const sqlPath = path.join(__dirname, '..', 'db', 'seed.sql');
 
@@ -13,10 +14,14 @@ async function run() {
     process.exit(1);
   }
 
+  const sslEnabled = process.env.DATABASE_SSL === 'true';
+  const hostMatch = /@([^/]+)\//.exec(process.env.DATABASE_URL);
+  console.log(`Connecting to ${hostMatch ? hostMatch[1] : '(unknown host)'} (SSL: ${sslEnabled})...`);
+
   const sql = fs.readFileSync(sqlPath, 'utf8');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    ssl: sslEnabled ? { rejectUnauthorized: false } : false,
   });
 
   try {
