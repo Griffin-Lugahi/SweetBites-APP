@@ -1099,7 +1099,9 @@ function setContactError(id, msg) {
   document.getElementById(id).classList.add('invalid');
 }
 
-contactForm.addEventListener('submit', e => {
+const contactSubmitBtn = contactForm.querySelector('button[type="submit"]');
+
+contactForm.addEventListener('submit', async e => {
   e.preventDefault();
   clearContactErrors();
 
@@ -1115,15 +1117,38 @@ contactForm.addEventListener('submit', e => {
 
   if (!valid) return;
 
-  contactForm.classList.add('hidden');
-  contactSuccess.classList.remove('hidden');
-  showToast('💌 Message sent! We\'ll be in touch soon.');
+  const originalBtnText = contactSubmitBtn.textContent;
+  contactSubmitBtn.disabled = true;
+  contactSubmitBtn.textContent = 'Sending…';
 
-  setTimeout(() => {
-    contactForm.reset();
-    contactForm.classList.remove('hidden');
+  try {
+    const res = await fetch(`${API_BASE}/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Message couldn't be sent (${res.status}).`);
+    }
+
     contactForm.classList.add('hidden');
-  }, 4000);
+    contactSuccess.classList.remove('hidden');
+    showToast('💌 Message sent! We\'ll be in touch soon.');
+
+    setTimeout(() => {
+      contactForm.reset();
+      contactForm.classList.remove('hidden');
+      contactSuccess.classList.add('hidden');
+    }, 4000);
+  } catch (err) {
+    console.error('Contact form submission failed:', err);
+    showToast(`⚠️ ${err.message || 'Could not send your message. Please try again.'}`, 'error');
+  } finally {
+    contactSubmitBtn.disabled = false;
+    contactSubmitBtn.textContent = originalBtnText;
+  }
 });
 
 
@@ -1408,8 +1433,10 @@ document.getElementById('newsletter-done-btn').addEventListener('click', () => {
 
 // DYNAMIC CAKE RENDERING — fetches the live menu from the backend API
 // instead of relying on hardcoded cards.
-
-const API_BASE = 'https://sweetbites-app.onrender.com/api';
+//
+// Change API_BASE to your deployed backend URL once sweetbite-api is
+// hosted somewhere other than your own machine (Render/Railway/etc).
+const API_BASE = 'http://localhost:4000/api';
 
 const pricingContainer = document.querySelector('.pricing-container');
 
