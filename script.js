@@ -1436,7 +1436,7 @@ document.getElementById('newsletter-done-btn').addEventListener('click', () => {
 //
 // Change API_BASE to your deployed backend URL once sweetbite-api is
 // hosted somewhere other than your own machine (Render/Railway/etc).
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'https://sweetbites-app.onrender.com/api';
 
 const pricingContainer = document.querySelector('.pricing-container');
 
