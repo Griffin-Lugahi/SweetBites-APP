@@ -1,6 +1,3 @@
--- SweetBite API — initial schema
--- Run with: npm run db:migrate   (or paste into your provider's SQL console)
-
 CREATE TABLE IF NOT EXISTS users (
   id             SERIAL PRIMARY KEY,
   name           VARCHAR(120) NOT NULL,
@@ -81,3 +78,14 @@ CREATE TRIGGER trg_orders_updated_at
   BEFORE UPDATE ON orders
   FOR EACH ROW
   EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id           SERIAL PRIMARY KEY,
+  name         VARCHAR(120) NOT NULL,
+  email        VARCHAR(255) NOT NULL,
+  message      TEXT NOT NULL,
+  is_read      BOOLEAN NOT NULL DEFAULT false,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_messages_is_read ON contact_messages (is_read);
