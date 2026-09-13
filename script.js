@@ -830,9 +830,12 @@ modalSubmitBtn.addEventListener('click', async () => {
   modalSubmitBtn.textContent = 'Placing order…';
 
   try {
+    const orderHeaders = { 'Content-Type': 'application/json' };
+    if (authToken) orderHeaders['Authorization'] = `Bearer ${authToken}`;
+
     const res = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: orderHeaders,
       body: JSON.stringify({
         cakeId: pendingItem.cakeId,
         size: selectedSize,
@@ -1437,6 +1440,242 @@ document.getElementById('newsletter-done-btn').addEventListener('click', () => {
 // Change API_BASE to your deployed backend URL once sweetbite-api is
 // hosted somewhere other than your own machine (Render/Railway/etc).
 const API_BASE = 'https://sweetbites-app.onrender.com/api';
+
+// ACCOUNT / AUTH
+// Persists the logged-in session (token + user) in localStorage so a
+// refresh doesn't log the person out. This is intentionally simple —
+// there's no token-refresh flow; when the 7-day token expires, the next
+// authenticated request will just fail and the person needs to log in
+// again (handled gracefully wherever we check currentUser below).
+const AUTH_STORAGE_KEY = 'sweetbite_auth';
+let currentUser = null;
+let authToken = null;
+
+function saveAuthState(token, user) {
+  authToken = token;
+  currentUser = user;
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ token, user }));
+  } catch {
+    // Storage unavailable — session just won't survive a refresh this time.
+  }
+}
+
+function loadAuthState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY));
+    if (saved && saved.token && saved.user) {
+      authToken = saved.token;
+      currentUser = saved.user;
+    }
+  } catch {
+    // Corrupted or missing — just start logged out.
+  }
+}
+
+function clearAuthState() {
+  authToken = null;
+  currentUser = null;
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+  }
+}
+
+const accountBtn = document.getElementById('account-btn');
+const accountLabel = document.getElementById('account-label');
+const accountDropdown = document.getElementById('account-dropdown');
+const accountDropdownName = document.getElementById('account-dropdown-name');
+const accountDropdownEmail = document.getElementById('account-dropdown-email');
+const accountDropdownAdminBadge = document.getElementById('account-dropdown-admin-badge');
+const accountLogoutBtn = document.getElementById('account-logout-btn');
+
+function updateAccountUI() {
+  if (currentUser) {
+    accountLabel.textContent = currentUser.name.split(' ')[0];
+    accountDropdownName.textContent = currentUser.name;
+    accountDropdownEmail.textContent = currentUser.email;
+    accountDropdownAdminBadge.classList.toggle('hidden', currentUser.role !== 'admin');
+  } else {
+    accountLabel.textContent = 'Login';
+  }
+}
+
+function openAccountDropdownOrModal() {
+  if (currentUser) {
+    const isOpen = accountDropdown.classList.toggle('open');
+    accountBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  } else {
+    openAuthModal();
+  }
+}
+
+accountBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openAccountDropdownOrModal();
+});
+
+document.addEventListener('click', (e) => {
+  if (!accountDropdown.classList.contains('open')) return;
+  if (accountDropdown.contains(e.target) || accountBtn.contains(e.target)) return;
+  accountDropdown.classList.remove('open');
+  accountBtn.setAttribute('aria-expanded', 'false');
+});
+
+accountLogoutBtn.addEventListener('click', () => {
+  clearAuthState();
+  updateAccountUI();
+  accountDropdown.classList.remove('open');
+  showToast('Logged out.');
+});
+
+// AUTH MODAL — login / register, toggled within the same overlay.
+const authOverlay = document.getElementById('auth-overlay');
+const authModal = document.getElementById('auth-modal');
+const authClose = document.getElementById('auth-close');
+const authStepLogin = document.getElementById('auth-step-login');
+const authStepRegister = document.getElementById('auth-step-register');
+
+function clearAuthErrors() {
+  ['login-email', 'login-password', 'register-name', 'register-email', 'register-phone', 'register-password'].forEach(id => {
+    const errEl = document.getElementById(`err-${id}`);
+    const inputEl = document.getElementById(id);
+    if (errEl) errEl.textContent = '';
+    if (inputEl) inputEl.classList.remove('invalid');
+  });
+}
+
+function showAuthError(id, msg) {
+  const errEl = document.getElementById(`err-${id}`);
+  const inputEl = document.getElementById(id);
+  if (errEl) errEl.textContent = msg;
+  if (inputEl) inputEl.classList.add('invalid');
+}
+
+function openAuthModal(mode = 'login') {
+  clearAuthErrors();
+  authStepLogin.classList.toggle('hidden', mode !== 'login');
+  authStepRegister.classList.toggle('hidden', mode !== 'register');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('register-name').value = '';
+  document.getElementById('register-email').value = '';
+  document.getElementById('register-phone').value = '';
+  document.getElementById('register-password').value = '';
+  authOverlay.classList.add('open');
+  setTimeout(() => {
+    const firstInput = mode === 'login'
+      ? document.getElementById('login-email')
+      : document.getElementById('register-name');
+    firstInput.focus();
+    pushFocusTrap(authModal);
+  }, 250);
+}
+
+function closeAuthModal() {
+  authOverlay.classList.remove('open');
+  popFocusTrap();
+}
+
+authClose.addEventListener('click', closeAuthModal);
+authOverlay.addEventListener('click', e => { if (e.target === authOverlay) closeAuthModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && authOverlay.classList.contains('open')) closeAuthModal(); });
+
+document.getElementById('show-register').addEventListener('click', () => openAuthModal('register'));
+document.getElementById('show-login').addEventListener('click', () => openAuthModal('login'));
+
+const loginSubmitBtn = document.getElementById('login-submit');
+loginSubmitBtn.addEventListener('click', async () => {
+  clearAuthErrors();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  let valid = true;
+  if (!email) { showAuthError('login-email', 'Please enter your email.'); valid = false; }
+  if (!password) { showAuthError('login-password', 'Please enter your password.'); valid = false; }
+  if (!valid) return;
+
+  const originalText = loginSubmitBtn.textContent;
+  loginSubmitBtn.disabled = true;
+  loginSubmitBtn.textContent = 'Logging in…';
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      showAuthError('login-password', data.error || 'Login failed.');
+      return;
+    }
+
+    saveAuthState(data.token, data.user);
+    updateAccountUI();
+    closeAuthModal();
+    showToast(`👋 Welcome back, ${data.user.name.split(' ')[0]}!`);
+  } catch (err) {
+    console.error('Login failed:', err);
+    showAuthError('login-password', 'Could not log in right now. Please try again.');
+  } finally {
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.textContent = originalText;
+  }
+});
+
+const registerSubmitBtn = document.getElementById('register-submit');
+registerSubmitBtn.addEventListener('click', async () => {
+  clearAuthErrors();
+  const name = document.getElementById('register-name').value.trim();
+  const email = document.getElementById('register-email').value.trim();
+  const phone = document.getElementById('register-phone').value.trim();
+  const password = document.getElementById('register-password').value;
+
+  let valid = true;
+  if (!name) { showAuthError('register-name', 'Please enter your name.'); valid = false; }
+  if (!email) { showAuthError('register-email', 'Please enter your email.'); valid = false; }
+  else if (!isValidEmail(email)) { showAuthError('register-email', 'Enter a valid email address.'); valid = false; }
+  if (!password || password.length < 8) { showAuthError('register-password', 'Password must be at least 8 characters.'); valid = false; }
+  if (!valid) return;
+
+  const originalText = registerSubmitBtn.textContent;
+  registerSubmitBtn.disabled = true;
+  registerSubmitBtn.textContent = 'Creating account…';
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone: phone || undefined, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      if (data.details) {
+        data.details.forEach(d => showAuthError(`register-${d.field === 'phone' ? 'phone' : d.field}`, d.message));
+      } else {
+        showAuthError('register-email', data.error || 'Could not create account.');
+      }
+      return;
+    }
+
+    saveAuthState(data.token, data.user);
+    updateAccountUI();
+    closeAuthModal();
+    showToast(`🎉 Welcome, ${data.user.name.split(' ')[0]}!`);
+  } catch (err) {
+    console.error('Registration failed:', err);
+    showAuthError('register-email', 'Could not create your account right now. Please try again.');
+  } finally {
+    registerSubmitBtn.disabled = false;
+    registerSubmitBtn.textContent = originalText;
+  }
+});
+
+loadAuthState();
+updateAccountUI();
 
 const pricingContainer = document.querySelector('.pricing-container');
 
