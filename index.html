@@ -103,7 +103,24 @@
         </li>
       </ul>
     </nav>
-    <div class="header-actions">
+  
+      <div class="header-actions">
+  <div class="account-wrapper">
+    <button id="account-btn" aria-label="Account" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="account-label">Login</span>
+    </button>
+
+    <div id="account-dropdown" class="account-dropdown" role="menu" aria-label="Account menu">
+      <div class="account-dropdown-info">
+        <p class="account-dropdown-name" id="account-dropdown-name"></p>
+        <p class="account-dropdown-email" id="account-dropdown-email"></p>
+        <span class="account-admin-badge hidden" id="account-dropdown-admin-badge">Admin</span>
+      </div>
+      <button type="button" id="account-logout-btn" class="account-logout-btn">Log out</button>
+    </div>
+  </div>
+
       <div class="cart-wrapper">
         <button id="cart-btn" aria-label="View cart" aria-haspopup="true" aria-expanded="false">
           🛒 Cart <span id="cart-count">0</span>
@@ -935,6 +952,74 @@
   </div>
 </div>
 
+<!-- LOGIN / REGISTER -->
+<div id="auth-overlay">
+  <div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <button id="auth-close" aria-label="Close">&times;</button>
+
+    <div id="auth-step-login">
+      <div class="modal-header">
+        <div class="modal-cake-badge">👋</div>
+        <div>
+          <p class="modal-eyebrow">Welcome back</p>
+          <h2 id="auth-title" class="modal-cake-name">Log In</h2>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" autocomplete="email" />
+          <span class="field-error" id="err-login-email"></span>
+        </div>
+        <div class="field-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" autocomplete="current-password" />
+          <span class="field-error" id="err-login-password"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="login-submit" class="btn-primary">Log In</button>
+        <p class="auth-switch">New here? <button type="button" id="show-register">Create an account</button></p>
+      </div>
+    </div>
+
+    <div id="auth-step-register" class="hidden">
+      <div class="modal-header">
+        <div class="modal-cake-badge">🎂</div>
+        <div>
+          <p class="modal-eyebrow">Join SweetBites</p>
+          <h2 class="modal-cake-name">Create Account</h2>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label for="register-name">Full name</label>
+          <input type="text" id="register-name" autocomplete="name" />
+          <span class="field-error" id="err-register-name"></span>
+        </div>
+        <div class="field-group">
+          <label for="register-email">Email</label>
+          <input type="email" id="register-email" autocomplete="email" />
+          <span class="field-error" id="err-register-email"></span>
+        </div>
+        <div class="field-group">
+          <label for="register-phone">Phone <span class="optional">(optional)</span></label>
+          <input type="tel" id="register-phone" autocomplete="tel" />
+          <span class="field-error" id="err-register-phone"></span>
+        </div>
+        <div class="field-group">
+          <label for="register-password">Password</label>
+          <input type="password" id="register-password" autocomplete="new-password" />
+          <span class="field-error" id="err-register-password"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="register-submit" class="btn-primary">Sign Up</button>
+        <p class="auth-switch">Already have an account? <button type="button" id="show-login">Log in</button></p>
+      </div>
+    </div>
+  </div>
+</div>
   <script src="script.js"></script>
 </body>
 </html>
