@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | SweetBites</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
+
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <header id="dash-header">
+    <div class="logo">
+      <img src="logo.png" width="36" height="36" alt="SweetBites logo" />
+      <span class="logo-text">SweetBites</span>
+      <span class="dash-header-tag">Dashboard</span>
+    </div>
+    <div class="dash-header-actions">
+      <span id="dash-user-name"></span>
+      <a href="index.html" class="dash-back-link">← Back to site</a>
+    </div>
+  </header>
+
+  <!-- Shown while we're checking whether the visitor is actually an admin -->
+  <div id="dash-checking" class="dash-state-screen">
+    <p>Checking access…</p>
+  </div>
+
+  <!-- Shown if the visitor isn't logged in as an admin -->
+  <div id="dash-denied" class="dash-state-screen hidden">
+    <h2>Admins only</h2>
+    <p>You need to be logged in with an admin account to view this page.</p>
+    <a href="index.html" class="btn-primary dash-denied-btn">Back to site</a>
+  </div>
+
+  <main id="dash-main" class="hidden">
+    <div class="dash-tabs" role="tablist">
+      <button class="dash-tab active" data-tab="orders" role="tab" aria-selected="true">Orders</button>
+      <button class="dash-tab" data-tab="messages" role="tab" aria-selected="false">Messages <span id="dash-unread-count" class="dash-tab-badge hidden">0</span></button>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <section id="dash-panel-orders" class="dash-panel">
+      <div class="dash-panel-header">
+        <h2>Orders</h2>
+        <div class="dash-filter-row" id="orders-filter-row">
+          <button class="dash-filter-btn active" data-status="">All</button>
+          <button class="dash-filter-btn" data-status="confirmed">Confirmed</button>
+          <button class="dash-filter-btn" data-status="baking">Baking</button>
+          <button class="dash-filter-btn" data-status="delivery">Out for delivery</button>
+          <button class="dash-filter-btn" data-status="delivered">Delivered</button>
+          <button class="dash-filter-btn" data-status="cancelled">Cancelled</button>
+        </div>
+      </div>
+      <div id="orders-list" class="dash-list">
+        <p class="dash-empty">Loading orders…</p>
+      </div>
+    </section>
+
+    <!-- MESSAGES TAB -->
+    <section id="dash-panel-messages" class="dash-panel hidden">
+      <div class="dash-panel-header">
+        <h2>Contact Messages</h2>
+        <div class="dash-filter-row">
+          <button class="dash-filter-btn active" data-unread="">All</button>
+          <button class="dash-filter-btn" data-unread="true">Unread only</button>
+        </div>
+      </div>
+      <div id="messages-list" class="dash-list">
+        <p class="dash-empty">Loading messages…</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

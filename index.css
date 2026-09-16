@@ -3320,3 +3320,23 @@ body.dark .account-logout-btn {
     right: -8px;
   }
 }
+
+.account-dashboard-link {
+  display: block;
+  text-align: center;
+  background: none;
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  padding: 9px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-top: 10px;
+  transition: var(--transition);
+}
+.account-dashboard-link:hover {
+  background: var(--primary);
+  color: #fff;
+}

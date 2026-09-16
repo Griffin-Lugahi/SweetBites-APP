@@ -1,0 +1,336 @@
+body {
+  background: var(--bg);
+}
+
+#dash-header {
+  background: rgba(61, 36, 24, 0.96);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+body.dark #dash-header {
+  background: rgba(26, 16, 8, 0.96);
+}
+
+#dash-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#dash-header .logo-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff8f2;
+}
+.dash-header-tag {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+#dash-user-name {
+  color: #fff8f2;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.dash-back-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.dash-back-link:hover {
+  text-decoration: underline;
+}
+
+.dash-state-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 40px 20px;
+}
+.dash-state-screen h2 {
+  font-size: 1.5rem;
+  color: var(--heading);
+}
+.dash-state-screen p {
+  color: var(--text-muted);
+  max-width: 360px;
+}
+.dash-denied-btn {
+  width: auto;
+  padding: 12px 28px;
+  margin-top: 8px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+#dash-main {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.dash-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #f0e0d0;
+}
+body.dark .dash-tabs {
+  border-bottom-color: #3a2010;
+}
+
+.dash-tab {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 12px 18px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-tab:hover {
+  color: var(--primary);
+}
+.dash-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.dash-tab-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.dash-panel.hidden {
+  display: none;
+}
+
+.dash-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.dash-panel-header h2 {
+  font-size: 1.3rem;
+  color: var(--heading);
+}
+
+.dash-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dash-filter-btn {
+  background: var(--card-bg);
+  border: 1.5px solid #e0d0c4;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+body.dark .dash-filter-btn {
+  border-color: #4a2e10;
+}
+.dash-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.dash-filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.dash-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+}
+
+.dash-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-order-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.dash-order-main {
+  flex: 1;
+  min-width: 220px;
+}
+.dash-order-number {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+.dash-order-cake {
+  font-weight: 700;
+  color: var(--heading);
+  font-size: 1rem;
+  margin: 4px 0 2px;
+}
+.dash-order-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.dash-order-status-select {
+  padding: 9px 14px;
+  border: 1.5px solid #e0d0c4;
+  border-radius: 30px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  cursor: pointer;
+}
+body.dark .dash-order-status-select {
+  border-color: #4a2e10;
+}
+
+.dash-status-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  color: #fff;
+}
+.dash-status-confirmed { background: #5b8def; }
+.dash-status-baking    { background: #e5a83e; }
+.dash-status-delivery  { background: #7b61ff; }
+.dash-status-delivered { background: #1f9d55; }
+.dash-status-cancelled { background: #c0392b; }
+
+.dash-message-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  border-left: 4px solid transparent;
+}
+.dash-message-card.unread {
+  border-left-color: var(--primary);
+}
+
+.dash-message-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.dash-message-from {
+  font-weight: 700;
+  color: var(--heading);
+  font-size: 0.92rem;
+}
+.dash-message-email {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.dash-message-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dash-message-body {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
+
+.dash-message-actions {
+  display: flex;
+  gap: 8px;
+}
+.dash-msg-btn {
+  background: none;
+  border: 1.5px solid #e0d0c4;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+body.dark .dash-msg-btn {
+  border-color: #4a2e10;
+}
+.dash-msg-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.dash-msg-btn.dash-msg-delete:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+@media (max-width: 640px) {
+  #dash-header {
+    padding: 12px 16px;
+  }
+  .dash-header-actions {
+    gap: 10px;
+  }
+  #dash-user-name {
+    display: none;
+  }
+  .dash-order-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
