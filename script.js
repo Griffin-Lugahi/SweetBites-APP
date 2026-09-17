@@ -1488,6 +1488,7 @@ const accountDropdown = document.getElementById('account-dropdown');
 const accountDropdownName = document.getElementById('account-dropdown-name');
 const accountDropdownEmail = document.getElementById('account-dropdown-email');
 const accountDropdownAdminBadge = document.getElementById('account-dropdown-admin-badge');
+const accountDashboardLink = document.getElementById('account-dashboard-link');
 const accountLogoutBtn = document.getElementById('account-logout-btn');
 
 function updateAccountUI() {
@@ -1496,6 +1497,7 @@ function updateAccountUI() {
     accountDropdownName.textContent = currentUser.name;
     accountDropdownEmail.textContent = currentUser.email;
     accountDropdownAdminBadge.classList.toggle('hidden', currentUser.role !== 'admin');
+    accountDashboardLink.classList.toggle('hidden', currentUser.role !== 'admin');
   } else {
     accountLabel.textContent = 'Login';
   }
