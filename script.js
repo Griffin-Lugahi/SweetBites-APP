@@ -979,15 +979,6 @@ function sendOrderWhatsAppConfirmation(order) {
   window.open(url, '_blank');
 }
 
-// CTA-bar button: opens WhatsApp with the cart contents in the message
-// (falls back to a plain enquiry when the cart is empty).
-document.getElementById('cta-whatsapp').addEventListener('click', (e) => {
-  e.preventDefault();
-  const msg = buildWhatsAppMessage();
-  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank', 'noopener');
-});
-
 // STICKY HEADER
 const header = document.getElementById('header');
 
@@ -995,20 +986,6 @@ const header = document.getElementById('header');
 window.addEventListener('scroll', () => {
   header.classList.toggle('scrolled', window.scrollY > 20);
 }, { passive: true });
-
-
-// STICKY CTA BAR — slides in once the hero has scrolled past
-const ctaBar      = document.getElementById('cta-bar');
-const heroSection = document.getElementById('hero');
-
-function syncCtaBar() {
-  const threshold = heroSection.offsetTop + heroSection.offsetHeight - 120;
-  ctaBar.classList.toggle('visible', window.scrollY > threshold);
-}
-
-window.addEventListener('scroll', syncCtaBar, { passive: true });
-window.addEventListener('resize', syncCtaBar);
-syncCtaBar();
 
 
 // GALLERY + LIGHTBOX
