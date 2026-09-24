@@ -14,8 +14,16 @@ function showToast(message, type = 'success') {
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea, input:not([disabled]), select, [tabindex]:not([tabindex="-1"])';
 const focusTrapStack = [];
 
-function pushFocusTrap(container) {
-  const previouslyFocused = document.activeElement;
+// `returnFocusTo` is where focus goes back to when the trap is released
+// (normally the button that opened the modal). Callers that trap after a
+// delay must capture it BEFORE the delay, otherwise "the currently focused
+// element" is already something inside the modal itself.
+function pushFocusTrap(container, returnFocusTo = document.activeElement) {
+  // One trap per container. Without this, switching Login <-> Register
+  // (which re-opens the same modal) stacked a second trap that the close
+  // button never released.
+  if (focusTrapStack.some(t => t.container === container)) return;
+  const previouslyFocused = returnFocusTo;
 
   function handleKeydown(e) {
     if (e.key !== 'Tab') return;
@@ -37,9 +45,15 @@ function pushFocusTrap(container) {
   focusTrapStack.push({ container, handleKeydown, previouslyFocused });
 }
 
-function popFocusTrap() {
-  const trap = focusTrapStack.pop();
-  if (!trap) return;
+// Releases the trap that belongs to `container` (not just "whatever is on
+// top"), so closing one modal can never strip another modal's trap.
+function popFocusTrap(container) {
+  let idx = -1;
+  for (let i = focusTrapStack.length - 1; i >= 0; i--) {
+    if (focusTrapStack[i].container === container) { idx = i; break; }
+  }
+  if (idx === -1) return;
+  const [trap] = focusTrapStack.splice(idx, 1);
   trap.container.removeEventListener('keydown', trap.handleKeydown);
   if (trap.previouslyFocused && typeof trap.previouslyFocused.focus === 'function') {
     trap.previouslyFocused.focus();
@@ -289,14 +303,25 @@ function saveCartState() {
 function loadCartState() {
   try {
     const saved = JSON.parse(localStorage.getItem(CART_STORAGE_KEY));
+    // localStorage can be edited by anyone with the dev tools open, so only
+    // accept well-formed values, and rebuild coupon / delivery data from our
+    // own tables instead of trusting the stored copy.
     if (saved && typeof saved.cart === 'object' && saved.cart !== null) {
-      Object.assign(cart, saved.cart);
+      Object.entries(saved.cart).forEach(([name, item]) => {
+        const price = Number(item && item.price);
+        const qty   = Math.floor(Number(item && item.qty));
+        if (Number.isFinite(price) && price >= 0 && qty >= 1 && qty <= 99) {
+          cart[name] = { price, qty };
+        }
+      });
     }
-    if (saved && saved.appliedCoupon) {
-      appliedCoupon = saved.appliedCoupon;
+    const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+    if (saved && saved.appliedCoupon && has(COUPONS, saved.appliedCoupon.code)) {
+      appliedCoupon = { code: saved.appliedCoupon.code, ...COUPONS[saved.appliedCoupon.code] };
     }
-    if (saved && saved.appliedDeliveryZone) {
-      appliedDeliveryZone = saved.appliedDeliveryZone;
+    if (saved && saved.appliedDeliveryZone && has(DELIVERY_ZONES, saved.appliedDeliveryZone.zone)) {
+      const zone = saved.appliedDeliveryZone.zone;
+      appliedDeliveryZone = { zone, fee: DELIVERY_ZONES[zone] };
     }
   } catch {
   }
@@ -313,9 +338,15 @@ const COUPONS = {
 };
 
 function setMinDate() {
+  // Build "tomorrow" from LOCAL date parts. toISOString() converts to UTC,
+  // which in Nairobi (UTC+3) returns TODAY's date between 00:00 and 03:00
+  // and let people pick same-day delivery.
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById('order-date').min = tomorrow.toISOString().split('T')[0];
+  const y = tomorrow.getFullYear();
+  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const d = String(tomorrow.getDate()).padStart(2, '0');
+  document.getElementById('order-date').min = `${y}-${m}-${d}`;
 }
 
 const CAKE_SIZE_MULTIPLIERS = { Small: 0.7, Medium: 1, Large: 1.5 };
@@ -384,17 +415,20 @@ function openModal(name, price, cakeId) {
   document.getElementById('order-date').value    = '';
   document.getElementById('order-notes').value   = '';
   setMinDate();
+  const trigger = document.activeElement;
   overlay.classList.add('open');
   setTimeout(() => {
+    if (!overlay.classList.contains('open')) return; // closed within the 250ms
     document.getElementById('order-name').focus();
-    pushFocusTrap(document.getElementById('order-modal'));
+    pushFocusTrap(document.getElementById('order-modal'), trigger);
   }, 250);
 }
 
 function closeModal() {
+  if (!overlay.classList.contains('open')) return;
   overlay.classList.remove('open');
   pendingItem = null;
-  popFocusTrap();
+  popFocusTrap(document.getElementById('order-modal'));
 }
 
 function clearErrors() {
@@ -422,6 +456,7 @@ function validateForm() {
   else if (!/^[\d\s\+\-\(\)]{7,}$/.test(phone)) { setError('phone', 'Enter a valid phone number.'); valid = false; }
   if (!address)                       { setError('address', 'Please enter a delivery address.'); valid = false; }
   if (!date)                          { setError('date', 'Please choose a delivery date.'); valid = false; }
+  else if (date < document.getElementById('order-date').min) { setError('date', 'Please choose a date from tomorrow onwards.'); valid = false; }
   return valid;
 }
 
@@ -519,8 +554,9 @@ function openQuickview(card) {
 }
 
 function closeQuickview() {
+  if (!quickviewOverlay.classList.contains('open')) return;
   quickviewOverlay.classList.remove('open');
-  popFocusTrap();
+  popFocusTrap(quickviewModal);
 }
 
 document.getElementById('quickview-close').addEventListener('click', closeQuickview);
@@ -595,20 +631,23 @@ function renderCart() {
     cartCheckoutBtn.disabled = true;
   } else {
     cartCheckoutBtn.disabled = false;
-    cartItemsList.innerHTML = entries.map(([name, { price, qty }]) => `
-      <div class="cart-item" data-name="${name}">
+    cartItemsList.innerHTML = entries.map(([name, { price, qty }]) => {
+      const safeName = escapeHtml(name);
+      return `
+      <div class="cart-item" data-name="${safeName}">
         <div class="cart-item-info">
-          <p class="cart-item-name">${name}</p>
+          <p class="cart-item-name">${safeName}</p>
           <p class="cart-item-price">${formatKES(price)} each</p>
         </div>
         <div class="cart-item-qty">
-          <button class="qty-btn qty-dec" aria-label="Decrease quantity of ${name}">−</button>
+          <button class="qty-btn qty-dec" aria-label="Decrease quantity of ${safeName}">−</button>
           <span class="qty-num">${qty}</span>
-          <button class="qty-btn qty-inc" aria-label="Increase quantity of ${name}">+</button>
+          <button class="qty-btn qty-inc" aria-label="Increase quantity of ${safeName}">+</button>
         </div>
         <span class="cart-item-subtotal">${formatKES(price * qty)}</span>
-        <button class="cart-item-remove" aria-label="Remove ${name} from cart">&times;</button>
-      </div>`).join('');
+        <button class="cart-item-remove" aria-label="Remove ${safeName} from cart">&times;</button>
+      </div>`;
+    }).join('');
   }
 
   const subtotal = calcSubtotal();
@@ -653,9 +692,10 @@ function openCartDropdown() {
 }
 
 function closeCartDropdown() {
+  if (!cartDropdown.classList.contains('open')) return;
   cartDropdown.classList.remove('open');
   cartBtn.setAttribute('aria-expanded', 'false');
-  popFocusTrap();
+  popFocusTrap(cartDropdown);
 }
 
 cartBtn.addEventListener('click', (e) => {
@@ -863,7 +903,7 @@ modalSubmitBtn.addEventListener('click', async () => {
     if (lastOrder.notes) rows.push(['Notes', lastOrder.notes]);
 
     document.getElementById('confirm-details').innerHTML = rows
-      .map(([k, v]) => `<div class="confirm-row"><span>${k}</span><span>${v}</span></div>`)
+      .map(([k, v]) => `<div class="confirm-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`)
       .join('');
 
     sendOrderWhatsAppConfirmation(lastOrder);
@@ -1172,18 +1212,21 @@ function openTrackModal() {
   trackStepResult.classList.add('hidden');
   trackErrorEl.textContent = '';
   trackInput.classList.remove('invalid');
+  const trigger = document.activeElement;
   setTimeout(() => {
+    if (!trackOverlay.classList.contains('open')) return; // closed within the 250ms
     trackInput.focus();
-    pushFocusTrap(document.getElementById('track-modal'));
+    pushFocusTrap(document.getElementById('track-modal'), trigger);
   }, 250);
 }
 
 function closeTrackModal() {
+  if (!trackOverlay.classList.contains('open')) return;
   trackOverlay.classList.remove('open');
   clearInterval(trackerPollInterval);
   trackerPollInterval = null;
   trackedOrderNumber = null;
-  popFocusTrap();
+  popFocusTrap(document.getElementById('track-modal'));
 }
 
 function renderTracker(order) {
@@ -1336,16 +1379,19 @@ function openNewsletterPopup() {
   newsletterEmailError.textContent = '';
   newsletterEmailInput.classList.remove('invalid');
   newsletterModal.setAttribute('aria-labelledby', 'newsletter-title');
+  const trigger = document.activeElement;
   newsletterOverlay.classList.add('open');
   setTimeout(() => {
+    if (!newsletterOverlay.classList.contains('open')) return; // closed within the 250ms
     newsletterEmailInput.focus();
-    pushFocusTrap(newsletterModal);
+    pushFocusTrap(newsletterModal, trigger);
   }, 250);
 }
 
 function closeNewsletterPopup() {
+  if (!newsletterOverlay.classList.contains('open')) return;
   newsletterOverlay.classList.remove('open');
-  popFocusTrap();
+  popFocusTrap(newsletterModal);
 }
 
 setTimeout(() => {
@@ -1542,19 +1588,22 @@ function openAuthModal(mode = 'login') {
   document.getElementById('register-email').value = '';
   document.getElementById('register-phone').value = '';
   document.getElementById('register-password').value = '';
+  const trigger = document.activeElement;
   authOverlay.classList.add('open');
   setTimeout(() => {
+    if (!authOverlay.classList.contains('open')) return; // closed within the 250ms
     const firstInput = mode === 'login'
       ? document.getElementById('login-email')
       : document.getElementById('register-name');
     firstInput.focus();
-    pushFocusTrap(authModal);
+    pushFocusTrap(authModal, trigger);
   }, 250);
 }
 
 function closeAuthModal() {
+  if (!authOverlay.classList.contains('open')) return;
   authOverlay.classList.remove('open');
-  popFocusTrap();
+  popFocusTrap(authModal);
 }
 
 authClose.addEventListener('click', closeAuthModal);
@@ -1659,10 +1708,16 @@ updateAccountUI();
 
 const pricingContainer = document.querySelector('.pricing-container');
 
+// Safe for both text content AND quoted attribute values. (The old
+// textContent/innerHTML trick left " and ' untouched, so a value containing
+// a quote could break out of an attribute like data-name="...".)
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str ?? '';
-  return div.innerHTML;
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function buildCakeCardHTML(cake) {

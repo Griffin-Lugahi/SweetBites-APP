@@ -99,10 +99,15 @@ function formatDashDate(dateStr) {
   return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// Safe for text content AND quoted attribute values (the old
+// textContent/innerHTML trick left quotes untouched).
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str ?? '';
-  return div.innerHTML;
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function formatKES(amount) {
@@ -111,10 +116,10 @@ function formatKES(amount) {
 
 function buildOrderCardHTML(order) {
   return `
-    <div class="dash-order-card" data-order-number="${order.orderNumber}">
+    <div class="dash-order-card" data-order-number="${escapeHtml(order.orderNumber)}">
       <div class="dash-order-main">
-        <span class="dash-order-number">${order.orderNumber}</span>
-        <span class="dash-status-pill dash-status-${order.status}">${STATUS_LABELS[order.status] || order.status}</span>
+        <span class="dash-order-number">${escapeHtml(order.orderNumber)}</span>
+        <span class="dash-status-pill dash-status-${escapeHtml(order.status)}">${escapeHtml(STATUS_LABELS[order.status] || order.status)}</span>
         <p class="dash-order-cake">${escapeHtml(order.cakeName)} — ${escapeHtml(order.size)}, ${escapeHtml(order.frosting)}</p>
         <p class="dash-order-meta">
           ${escapeHtml(order.customerName)} · ${escapeHtml(order.customerPhone)}<br>
@@ -123,7 +128,7 @@ function buildOrderCardHTML(order) {
           ${order.notes ? `<br>Notes: ${escapeHtml(order.notes)}` : ''}
         </p>
       </div>
-      <select class="dash-order-status-select" data-order-number="${order.orderNumber}">
+      <select class="dash-order-status-select" data-order-number="${escapeHtml(order.orderNumber)}">
         ${Object.entries(STATUS_LABELS).map(([value, label]) =>
           `<option value="${value}" ${value === order.status ? 'selected' : ''}>${label}</option>`
         ).join('')}
