@@ -587,6 +587,17 @@ body.dark #header {
   background: rgba(26, 16, 8, 0.96);
 }
 
+/* Header colour once the page is scrolled (class toggled from script.js).
+   The dark variant needs its own rule because body.dark #header is more
+   specific than #header.scrolled. */
+#header.scrolled {
+  background: rgba(61, 36, 24, 1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+body.dark #header.scrolled {
+  background: rgba(26, 16, 8, 1);
+}
+
 body.dark .field-group input,
 body.dark .field-group textarea {
   background: #1a1008;
@@ -1210,23 +1221,37 @@ body.dark .trust-strip {
 }
 
 /* CTA BAR */
+/* Fixed (not sticky) so the hidden bar takes no space in the page flow,
+   which used to leave an empty gap under the trust bar. */
 #cta-bar {
-  position: sticky;
+  position: fixed;
   top: 70px; /* sits just under the fixed header */
+  left: 0;
+  right: 0;
   z-index: 900;
   background: var(--secondary);
   box-shadow: 0 4px 24px rgba(92,42,0,0.22);
   transform: translateY(-100%);
   opacity: 0;
+  visibility: hidden; /* hidden links can't be tabbed to */
   pointer-events: none;
   transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity   0.38s ease;
+              opacity   0.38s ease,
+              visibility 0s linear 0.38s;
 }
 
 #cta-bar.visible {
   transform: translateY(0);
   opacity: 1;
+  visibility: visible;
   pointer-events: all;
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity   0.38s ease,
+              visibility 0s;
+}
+
+@media (max-width: 480px) {
+  #cta-bar { top: 66px; } /* header is slightly shorter on small phones */
 }
 
 .cta-bar-inner {
@@ -1308,11 +1333,13 @@ body.dark #cta-bar {
 }
 
 @media (max-width: 640px) {
+  /* Keep the bar slim on phones: buttons only, one row. */
+  .cta-bar-text { display: none; }
   .cta-bar-inner {
-    padding: 12px 20px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    padding: 10px 16px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
   }
   .cta-bar-actions {
     width: 100%;
@@ -1371,7 +1398,7 @@ body.dark #cta-bar {
 /* BACK TO TOP */
 #back-to-top {
   position: fixed;
-  bottom: 96px;              
+  bottom: 28px;
   right: 28px;
   width: 44px;
   height: 44px;

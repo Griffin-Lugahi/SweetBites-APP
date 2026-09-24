@@ -231,7 +231,6 @@ const cartItemsList  = document.getElementById('cart-items-list');
 const cartTotalEl    = document.getElementById('cart-total');
 const cartCheckoutBtn = document.getElementById('cart-checkout-btn');
 const cartClearBtn   = document.getElementById('cart-clear-btn');
-const whatsappBtn    = document.getElementById('whatsapp-btn');
 
 const couponInput      = document.getElementById('coupon-input');
 const couponApplyBtn   = document.getElementById('coupon-apply-btn');
@@ -571,10 +570,6 @@ function bumpCartCount() {
   setTimeout(() => cartCount.classList.remove('bump'), 300);
 }
 
-function syncWhatsAppBadge() {
-  whatsappBtn.classList.toggle('has-items', cartItemCount() > 0);
-}
-
 function calcSubtotal() {
   return Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
 }
@@ -648,7 +643,6 @@ function addToCart(name, price, qty = 1) {
   updateCartCount();
   bumpCartCount();
   renderCart();
-  syncWhatsAppBadge();
   saveCartState();
 }
 
@@ -701,7 +695,6 @@ cartItemsList.addEventListener('click', (e) => {
 
   renderCart();
   updateCartCount();
-  syncWhatsAppBadge();
   saveCartState();
 });
 
@@ -711,7 +704,6 @@ cartClearBtn.addEventListener('click', () => {
   removeCoupon(false);
   renderCart();
   updateCartCount();
-  syncWhatsAppBadge();
   saveCartState();
   showToast('🗑️ Cart cleared');
 });
@@ -856,10 +848,6 @@ modalSubmitBtn.addEventListener('click', async () => {
     const data = await res.json();
     lastOrder = data.order;
 
-    // Also add to the WhatsApp-bundle cart, same as before, so the
-    // existing "Order via WhatsApp" cart flow still reflects this cake.
-    addToCart(lastOrder.cakeName, lastOrder.price);
-
     document.getElementById('confirm-order-id').textContent = lastOrder.orderNumber;
 
     const rows = [
@@ -893,8 +881,10 @@ modalSubmitBtn.addEventListener('click', async () => {
 
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('modal-done').addEventListener('click', () => {
+  // Read the name BEFORE closeModal(), which resets pendingItem to null.
+  const orderedName = lastOrder ? lastOrder.cakeName : 'your cake';
   closeModal();
-  showToast(`🎉 Order for "${pendingItem?.name ?? 'your cake'}" confirmed!`);
+  showToast(`🎉 Order for "${orderedName}" confirmed!`);
 });
 document.getElementById('resend-wa-btn').addEventListener('click', () => {
   if (lastOrder) sendOrderWhatsAppConfirmation(lastOrder);
@@ -925,7 +915,6 @@ if (appliedDeliveryZone) {
 }
 renderCart();
 updateCartCount();
-syncWhatsAppBadge();
 
 
 // WHATSAPP BUTTON
@@ -990,24 +979,36 @@ function sendOrderWhatsAppConfirmation(order) {
   window.open(url, '_blank');
 }
 
-document.getElementById('whatsapp-btn').addEventListener('click', () => {
+// CTA-bar button: opens WhatsApp with the cart contents in the message
+// (falls back to a plain enquiry when the cart is empty).
+document.getElementById('cta-whatsapp').addEventListener('click', (e) => {
+  e.preventDefault();
   const msg = buildWhatsAppMessage();
   const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
+  window.open(url, '_blank', 'noopener');
 });
 
 // STICKY HEADER
 const header = document.getElementById('header');
 
+// Toggle a class instead of inline styles so dark mode can restyle it in CSS.
 window.addEventListener('scroll', () => {
-  if (window.scrollY > 20) {
-    header.style.background   = 'rgba(61, 36, 24, 1)';
-    header.style.boxShadow    = '0 4px 16px rgba(0,0,0,0.12)';
-  } else {
-    header.style.background   = 'rgba(61, 36, 24, 0.96)';
-    header.style.boxShadow    = '0 2px 12px rgba(0,0,0,0.08)';
-  }
+  header.classList.toggle('scrolled', window.scrollY > 20);
 }, { passive: true });
+
+
+// STICKY CTA BAR — slides in once the hero has scrolled past
+const ctaBar      = document.getElementById('cta-bar');
+const heroSection = document.getElementById('hero');
+
+function syncCtaBar() {
+  const threshold = heroSection.offsetTop + heroSection.offsetHeight - 120;
+  ctaBar.classList.toggle('visible', window.scrollY > threshold);
+}
+
+window.addEventListener('scroll', syncCtaBar, { passive: true });
+window.addEventListener('resize', syncCtaBar);
+syncCtaBar();
 
 
 // GALLERY + LIGHTBOX
