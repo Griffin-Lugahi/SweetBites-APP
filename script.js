@@ -60,6 +60,15 @@ function popFocusTrap(container) {
   }
 }
 
+// The API answers validation failures with { error: 'Validation failed.',
+// details: [{ field, message }] }. Show the first specific message (e.g.
+// "Delivery date must be tomorrow or later.") instead of the generic one.
+function apiErrorMessage(errData, fallback) {
+  if (errData && Array.isArray(errData.details) && errData.details[0] && errData.details[0].message) {
+    return errData.details[0].message;
+  }
+  return (errData && errData.error) || fallback;
+}
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -453,7 +462,7 @@ function validateForm() {
 
   if (!name)                          { setError('name', 'Please enter your full name.'); valid = false; }
   if (!phone)                         { setError('phone', 'Please enter a phone number.'); valid = false; }
-  else if (!/^[\d\s\+\-\(\)]{7,}$/.test(phone)) { setError('phone', 'Enter a valid phone number.'); valid = false; }
+  else if (!/^[\d\s\+\-\(\)]{7,30}$/.test(phone)) { setError('phone', 'Enter a valid phone number.'); valid = false; }
   if (!address)                       { setError('address', 'Please enter a delivery address.'); valid = false; }
   if (!date)                          { setError('date', 'Please choose a delivery date.'); valid = false; }
   else if (date < document.getElementById('order-date').min) { setError('date', 'Please choose a date from tomorrow onwards.'); valid = false; }
@@ -882,7 +891,7 @@ modalSubmitBtn.addEventListener('click', async () => {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `The order couldn't be placed (${res.status}).`);
+      throw new Error(apiErrorMessage(errData, `The order couldn't be placed (${res.status}).`));
     }
 
     const data = await res.json();
@@ -1151,7 +1160,7 @@ contactForm.addEventListener('submit', async e => {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Message couldn't be sent (${res.status}).`);
+      throw new Error(apiErrorMessage(errData, `Message couldn't be sent (${res.status}).`));
     }
 
     contactForm.classList.add('hidden');
