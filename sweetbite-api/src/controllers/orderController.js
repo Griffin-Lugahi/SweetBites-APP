@@ -35,6 +35,20 @@ function toPublicOrder(row) {
   };
 }
 
+// What anyone holding an order number may see. Order numbers are sequential
+// (SB-1001, SB-1002, ...) so they can be guessed — this view deliberately
+// leaves out everything personal (name, phone, address, notes). It contains
+// exactly what the tracking screen needs. The full order (toPublicOrder) is
+// only returned to whoever just created it, and to admins via listOrders.
+function toTrackingView(row) {
+  return {
+    orderNumber: toOrderCode(row.id),
+    cakeName: row.cake_name,
+    deliveryDate: row.delivery_date,
+    status: row.status,
+  };
+}
+
 async function createOrder(req, res) {
   const {
     cakeId, size, frosting,
@@ -45,6 +59,9 @@ async function createOrder(req, res) {
   const cake = cakeResult.rows[0];
   if (!cake) {
     return res.status(404).json({ error: 'Cake not found.' });
+  }
+  if (!cake.is_available) {
+    return res.status(409).json({ error: 'Sorry, this cake is currently unavailable.' });
   }
 
   const sizeMult = SIZE_MULTIPLIERS[size];
@@ -79,7 +96,7 @@ async function getOrder(req, res) {
   if (!order) {
     return res.status(404).json({ error: 'Order not found.' });
   }
-  res.json({ order: toPublicOrder(order) });
+  res.json({ order: toTrackingView(order) });
 }
 
 async function listOrders(req, res) {

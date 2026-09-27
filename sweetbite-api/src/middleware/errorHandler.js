@@ -10,10 +10,14 @@ function notFound(req, res) {
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
   console.error(err);
 
-  // Postgres unique-violation (e.g. duplicate email) — surface as 409
-  // instead of a generic 500.
+  // Postgres unique-violation — surface as 409 instead of a generic 500.
+  // Only the email constraint gets the "already registered" wording; other
+  // unique columns (e.g. a duplicate cake name) get a neutral message.
   if (err.code === '23505') {
-    return res.status(409).json({ error: 'That email is already registered.' });
+    const isEmail = /email/i.test(err.constraint || '');
+    return res.status(409).json({
+      error: isEmail ? 'That email is already registered.' : 'That value already exists.',
+    });
   }
 
   const status = err.status || 500;

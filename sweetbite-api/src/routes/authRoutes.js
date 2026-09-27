@@ -22,10 +22,17 @@ router.post(
   '/register',
   authLimiter,
   [
-    body('name').trim().notEmpty().withMessage('Name is required.'),
-    body('email').trim().isEmail().withMessage('A valid email is required.'),
-    body('phone').optional({ checkFalsy: true }).isString(),
-    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters.'),
+    body('name').isString().withMessage('Name is required.').bail()
+      .trim().isLength({ min: 1, max: 120 }).withMessage('Name is required (max 120 characters).'),
+    body('email').isString().withMessage('A valid email is required.').bail()
+      .trim().isEmail().withMessage('A valid email is required.')
+      .isLength({ max: 255 }).withMessage('Email is too long.'),
+    body('phone').optional({ checkFalsy: true })
+      .isString().bail().trim().isLength({ max: 30 }).withMessage('Phone number is too long (max 30 characters).'),
+    // bcrypt only uses the first 72 bytes, so longer passwords add nothing
+    // but hashing cost.
+    body('password').isString().bail()
+      .isLength({ min: 8, max: 72 }).withMessage('Password must be between 8 and 72 characters.'),
   ],
   validate,
   asyncHandler(authController.register)
@@ -35,8 +42,10 @@ router.post(
   '/login',
   authLimiter,
   [
-    body('email').trim().isEmail().withMessage('A valid email is required.'),
-    body('password').notEmpty().withMessage('Password is required.'),
+    body('email').isString().withMessage('A valid email is required.').bail()
+      .trim().isEmail().withMessage('A valid email is required.'),
+    body('password').isString().withMessage('Password is required.').bail()
+      .isLength({ min: 1, max: 1000 }).withMessage('Password is required.'),
   ],
   validate,
   asyncHandler(authController.login)
@@ -48,8 +57,10 @@ router.patch(
   '/me',
   requireAuth,
   [
-    body('name').optional({ checkFalsy: true }).trim().notEmpty(),
-    body('phone').optional({ checkFalsy: true }).isString(),
+    body('name').optional({ checkFalsy: true })
+      .isString().bail().trim().isLength({ min: 1, max: 120 }).withMessage('Name must be 1-120 characters.'),
+    body('phone').optional({ checkFalsy: true })
+      .isString().bail().trim().isLength({ max: 30 }).withMessage('Phone number is too long (max 30 characters).'),
   ],
   validate,
   asyncHandler(authController.updateMe)
@@ -59,8 +70,9 @@ router.post(
   '/change-password',
   requireAuth,
   [
-    body('currentPassword').notEmpty(),
-    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters.'),
+    body('currentPassword').isString().bail().isLength({ min: 1, max: 1000 }),
+    body('newPassword').isString().bail()
+      .isLength({ min: 8, max: 72 }).withMessage('New password must be between 8 and 72 characters.'),
   ],
   validate,
   asyncHandler(authController.changePassword)

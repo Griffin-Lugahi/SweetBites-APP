@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 
 const cakeController = require('../controllers/cakeController');
 const validate = require('../middleware/validate');
@@ -36,11 +36,15 @@ const updateValidators = [
   body('isAvailable').optional().isBoolean(),
 ];
 
+// A non-numeric id (e.g. /cakes/abc) would otherwise reach Postgres and
+// come back as a 500.
+const idParam = param('id').isInt({ min: 1, max: 2147483647 }).withMessage('Invalid id.');
+
 router.get('/', asyncHandler(cakeController.listCakes));
-router.get('/:id', asyncHandler(cakeController.getCake));
+router.get('/:id', idParam, validate, asyncHandler(cakeController.getCake));
 
 router.post('/', requireAuth, requireAdmin, createValidators, validate, asyncHandler(cakeController.createCake));
-router.patch('/:id', requireAuth, requireAdmin, updateValidators, validate, asyncHandler(cakeController.updateCake));
-router.delete('/:id', requireAuth, requireAdmin, asyncHandler(cakeController.deleteCake));
+router.patch('/:id', requireAuth, requireAdmin, idParam, updateValidators, validate, asyncHandler(cakeController.updateCake));
+router.delete('/:id', requireAuth, requireAdmin, idParam, validate, asyncHandler(cakeController.deleteCake));
 
 module.exports = router;
