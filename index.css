@@ -208,10 +208,9 @@ img { display: block; max-width: 100%; }
 }
 
 /* CART WRAPPER + DROPDOWN */
-.cart-wrapper {
-  position: relative;
-}
-
+/* No position:relative here on purpose — the dropdown below needs to
+   anchor to #header (position:fixed) so it hugs the true screen edge
+   on mobile, not just this button's own edge. See .cart-dropdown. */
 #cart-btn {
   background: none;
   border: 2px solid var(--primary);
@@ -2882,8 +2881,8 @@ body.dark .confirm-wa-note {
   }
 
   .cart-dropdown {
-    right: -10px;
-    width: 300px;
+    right: 20px;
+    width: calc(100vw - 40px);
   }
 }
 
@@ -2909,6 +2908,11 @@ body.dark .confirm-wa-note {
     font-size: 0.8rem;
     gap: 5px;
   }
+  #account-btn {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+    gap: 5px;
+  }
   #theme-toggle {
     width: 32px;
     height: 32px;
@@ -2922,8 +2926,28 @@ body.dark .confirm-wa-note {
   .gallery-item.big { grid-column: span 2; grid-row: span 1; }
 
   .cart-dropdown {
-    width: calc(100vw - 24px);
-    right: -8px;
+    width: calc(100vw - 28px);
+    right: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Even after the shrinking above, "Login" plus the logo can still
+     collide on the very narrowest phones. Drop the text and show just
+     the icon — the modal/dropdown it opens still makes its purpose
+     obvious, the same way the theme toggle button works with no label. */
+  #account-label {
+    display: none;
+  }
+  #account-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .header-actions {
+    gap: 4px;
   }
 }
 
@@ -3002,10 +3026,9 @@ body.dark .confirm-wa-note {
 }
 
 /* ACCOUNT BUTTON + DROPDOWN */
-.account-wrapper {
-  position: relative;
-}
-
+/* No position:relative here on purpose — see the matching note on
+   .cart-wrapper above; the dropdown anchors to #header instead so it
+   hugs the true screen edge on mobile. */
 #account-btn {
   background: none;
   border: 2px solid var(--primary);
@@ -3169,8 +3192,8 @@ body.dark .account-logout-btn {
 
 @media (max-width: 480px) {
   .account-dropdown {
-    width: calc(100vw - 24px);
-    right: -8px;
+    width: calc(100vw - 28px);
+    right: 14px;
   }
 }
 
