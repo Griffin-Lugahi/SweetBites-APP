@@ -702,6 +702,31 @@ body.dark .cart-total-row {
   stroke: #fff;
 }
 
+/* Hidden by default — the mobile hamburger menu has its own row-style
+   version instead. */
+.nav-theme-item {
+  display: none;
+}
+.nav-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  color: #fff8f2;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 30px;
+  transition: background var(--transition), color var(--transition);
+}
+.nav-theme-toggle:hover {
+  background: rgba(255,255,255,0.08);
+}
+
 /* HAMBURGER */
 #hamburger {
   display: none;
@@ -2747,8 +2772,17 @@ body.dark .confirm-wa-note {
     padding: 14px 20px;
   }
 
-  #hamburger {
+   #hamburger {
     display: flex;
+  }
+
+  /* Dark mode moves into the hamburger menu on phones, freeing up
+     space so "Login" keeps its text instead of shrinking to an icon. */
+  .nav-theme-item {
+    display: block;
+  }
+  #theme-toggle {
+    display: none;
   }
 
   #nav-bar {

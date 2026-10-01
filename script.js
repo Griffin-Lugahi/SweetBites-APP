@@ -103,26 +103,43 @@ backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// DARK MODE TOGGLE
-const themeToggle = document.getElementById('theme-toggle');
-const iconMoon    = document.getElementById('icon-moon');
-const iconSun     = document.getElementById('icon-sun');
+// DARK MODE TOGGLE — two buttons (header, for desktop; hamburger menu,
+// for mobile) stay in sync through one shared function.
+const themeToggle       = document.getElementById('theme-toggle');
+const iconMoon          = document.getElementById('icon-moon');
+const iconSun           = document.getElementById('icon-sun');
+const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+const iconMoonMobile    = document.getElementById('icon-moon-mobile');
+const iconSunMobile     = document.getElementById('icon-sun-mobile');
+const themeToggleMobileLabel = document.getElementById('theme-toggle-mobile-label');
+
+function applyThemeIcons(isDark) {
+  iconMoon.style.display = isDark ? 'none' : 'block';
+  iconSun.style.display  = isDark ? 'block' : 'none';
+  themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+
+  iconMoonMobile.style.display = isDark ? 'none' : 'block';
+  iconSunMobile.style.display  = isDark ? 'block' : 'none';
+  themeToggleMobile.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+  themeToggleMobileLabel.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+}
 
 if (localStorage.getItem('theme') === 'dark') {
   document.body.classList.add('dark');
-  iconMoon.style.display = 'none';
-  iconSun.style.display  = 'block';
-  themeToggle.setAttribute('aria-pressed', 'true');
+  applyThemeIcons(true);
 }
 
-themeToggle.addEventListener('click', () => {
+function toggleTheme() {
   const isDark = document.body.classList.toggle('dark');
-  iconMoon.style.display = isDark ? 'none'  : 'block';
-  iconSun.style.display  = isDark ? 'block' : 'none';
-  themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+  applyThemeIcons(isDark);
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
-});
+}
 
+themeToggle.addEventListener('click', toggleTheme);
+themeToggleMobile.addEventListener('click', () => {
+  toggleTheme();
+  setHamburgerOpen(false); // tapping it inside the menu should close the menu too
+});
 // SCROLL REVEAL 
 const revealEls = document.querySelectorAll('.feature, .testi-card, .about-block, .stat-card, .gallery-item, .faq-item');
 
