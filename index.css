@@ -98,7 +98,15 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex-shrink: 1;
 }
+.logo-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #header-img { width: 42px; height: 42px; object-fit: contain; }
 
 .footer-brand img { width: 36px; height: 36px; object-fit: contain; }
@@ -205,6 +213,9 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 /* CART WRAPPER + DROPDOWN */
