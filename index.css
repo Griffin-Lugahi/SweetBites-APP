@@ -2925,7 +2925,7 @@ body.dark .confirm-wa-note {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   /* Logo text + full-width cart button + theme toggle + hamburger no
      longer fit in one row on narrow phones, which pushes the hamburger
      past the edge of the viewport. Tighten spacing so everything stays
