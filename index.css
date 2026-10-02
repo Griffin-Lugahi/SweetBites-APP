@@ -2776,12 +2776,17 @@ body.dark .confirm-wa-note {
     display: flex;
   }
 
-  /* Dark mode moves into the hamburger menu on phones, freeing up
-     space so "Login" keeps its text instead of shrinking to an icon. */
+  /* Dark mode moves into the hamburger menu on phones. Login is hidden
+     entirely here — ordering never needs an account, and a shrunk or
+     icon-only Login button kept colliding with the logo or showing up
+     blank. Desktop keeps both exactly as before. */
   .nav-theme-item {
     display: block;
   }
   #theme-toggle {
+    display: none;
+  }
+  .account-wrapper {
     display: none;
   }
 
@@ -2942,11 +2947,6 @@ body.dark .confirm-wa-note {
     font-size: 0.8rem;
     gap: 5px;
   }
-  #account-btn {
-    padding: 7px 10px;
-    font-size: 0.8rem;
-    gap: 5px;
-  }
   #theme-toggle {
     width: 32px;
     height: 32px;
@@ -2962,26 +2962,6 @@ body.dark .confirm-wa-note {
   .cart-dropdown {
     width: calc(100vw - 28px);
     right: 14px;
-  }
-}
-
-@media (max-width: 400px) {
-  /* Even after the shrinking above, "Login" plus the logo can still
-     collide on the very narrowest phones. Drop the text and show just
-     the icon — the modal/dropdown it opens still makes its purpose
-     obvious, the same way the theme toggle button works with no label. */
-  #account-label {
-    display: none;
-  }
-  #account-btn {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
-  }
-  .header-actions {
-    gap: 4px;
   }
 }
 
