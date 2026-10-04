@@ -827,6 +827,14 @@ body.dark .cart-total-row {
   gap: 16px;
 }
 
+.demo-disclaimer {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 18px;
+  opacity: 0.75;
+}
+
 .stat-card {
   background: var(--card-bg);
   border-radius: var(--radius);
