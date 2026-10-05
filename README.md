@@ -51,6 +51,47 @@ A separate page (`dashboard.html`) for logged-in admins: view all orders, change
 - **Database:** Render PostgreSQL.
 - Environment variables (`JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_URL`) are set in Render's dashboard, never committed to the repo.
 
+## Local Setup
+
+Requires Node.js and a local or hosted PostgreSQL database.
+
+**1. Clone and install**
+```bash
+git clone https://github.com/Griffin-Lugahi/SweetBites-APP.git
+cd SweetBites-APP/sweetbite-api
+npm install
+```
+
+**2. Configure environment variables**
+```bash
+cp .env.example .env
+```
+Then fill in `.env`:
+- `DATABASE_URL` — your Postgres connection string
+- `JWT_SECRET` — generate one with:
+```bash
+  node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+- `CORS_ORIGIN` — e.g. `http://localhost:5500` for local frontend testing
+
+**3. Set up the database**
+```bash
+npm run db:migrate   # creates tables from db/schema.sql
+npm run db:seed      # (optional) adds sample cakes
+```
+
+**4. Run the API**
+```bash
+npm run dev   # starts the server with auto-reload
+```
+The API runs on `http://localhost:4000` by default (or whatever `PORT` you set).
+
+**5. Run the frontend**
+
+The frontend (`index.html`, `script.js`, `index.css`) needs no build step — it's static. Open it with any local server (e.g. VS Code's Live Server extension, or `npx serve`), and make sure `API_BASE` in `script.js` points to your local API (`http://localhost:4000/api`) instead of the deployed Render URL.
+
+> **Note:** check `package.json` in `sweetbite-api` for the exact script names (`npm run dev`, `db:migrate`, etc.) — adjust the commands above if yours differ.
+
 ## Screenshots
 
 *(add a few here — hero section, cart dropdown, order tracker, admin dashboard)*
