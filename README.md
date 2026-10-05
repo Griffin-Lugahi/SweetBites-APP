@@ -94,7 +94,9 @@ The frontend (`index.html`, `script.js`, `index.css`) needs no build step — it
 
 ## Screenshots
 
-*(add a few here — hero section, cart dropdown, order tracker, admin dashboard)*
+![Hero section](images/screenshots/hero-section.png)
+![Cart dropdown](images/screenshots/cart-dropdown.png)
+![Track order](images/screenshots/track-order.png)
 
 ## Challenges
 
