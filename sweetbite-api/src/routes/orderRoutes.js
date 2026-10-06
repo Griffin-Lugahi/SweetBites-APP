@@ -7,6 +7,7 @@ const validate = require('../middleware/validate');
 const { requireAuth, optionalAuth, requireAdmin } = require('../middleware/authMiddleware');
 const asyncHandler = require('../utils/asyncHandler');
 const { nairobiDatePlusDays, isRealCalendarDate } = require('../utils/dates');
+const { COUPONS, DELIVERY_ZONES } = require('../utils/pricing');
 
 const router = Router();
 
@@ -58,6 +59,21 @@ const createValidators = [
     .optional({ checkFalsy: true })
     .isString().withMessage('Notes must be text.').bail()
     .trim().isLength({ max: 500 }).withMessage('Special instructions can be at most 500 characters.'),
+  // Both optional: an order can go through with no coupon and no delivery
+  // zone selected. If present, they must match a code/zone we recognize —
+  // the discount and fee themselves are computed server-side, never
+  // accepted from the request.
+  body('couponCode')
+    .optional({ checkFalsy: true })
+    .isString().withMessage('Coupon code must be text.').bail()
+    .trim()
+    .customSanitizer((value) => value.toUpperCase())
+    .isIn(Object.keys(COUPONS)).withMessage('Invalid or expired coupon code.'),
+  body('deliveryZone')
+    .optional({ checkFalsy: true })
+    .isString().withMessage('Delivery zone must be text.').bail()
+    .trim()
+    .isIn(Object.keys(DELIVERY_ZONES)).withMessage('Please select a valid delivery zone.'),
 ];
 
 const statusValidators = [

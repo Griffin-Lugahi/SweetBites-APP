@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { computeDiscount, computeDeliveryFee } = require('../utils/pricing');
 
 const SIZE_MULTIPLIERS = { Small: 0.7, Medium: 1, Large: 1.5 };
 const FROSTING_ADDONS = { 'Buttercream': 0, 'Chocolate Ganache': 500, 'Fresh Cream': 300 };
@@ -24,6 +25,11 @@ function toPublicOrder(row) {
     size: row.size,
     frosting: row.frosting,
     price: row.price,
+    couponCode: row.coupon_code,
+    discountAmount: row.discount_amount,
+    deliveryZone: row.delivery_zone,
+    deliveryFee: row.delivery_fee,
+    totalPrice: row.total_price,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
     deliveryAddress: row.delivery_address,
@@ -53,6 +59,7 @@ async function createOrder(req, res) {
   const {
     cakeId, size, frosting,
     customerName, customerPhone, deliveryAddress, deliveryDate, notes,
+    couponCode, deliveryZone,
   } = req.body;
 
   const cakeResult = await pool.query('SELECT * FROM cakes WHERE id = $1', [cakeId]);
@@ -68,16 +75,25 @@ async function createOrder(req, res) {
   const frostingFee = FROSTING_ADDONS[frosting];
   const price = Math.round(cake.price * sizeMult) + frostingFee;
 
+  // Computed server-side from the validated code/zone — never from a
+  // client-supplied amount, so a tampered request can't discount itself.
+  const normalizedCoupon = couponCode ? couponCode.trim().toUpperCase() : null;
+  const discountAmount = computeDiscount(price, normalizedCoupon);
+  const deliveryFee = computeDeliveryFee(deliveryZone);
+  const totalPrice = Math.max(0, price - discountAmount) + deliveryFee;
+
   const userId = req.userId || null;
 
   const result = await pool.query(
     `INSERT INTO orders
        (user_id, cake_id, cake_name, size, frosting, price,
+        coupon_code, discount_amount, delivery_zone, delivery_fee, total_price,
         customer_name, customer_phone, delivery_address, delivery_date, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       userId, cake.id, cake.name, size, frosting, price,
+      normalizedCoupon, discountAmount, deliveryZone || null, deliveryFee, totalPrice,
       customerName, customerPhone, deliveryAddress, deliveryDate, notes || null,
     ]
   );
