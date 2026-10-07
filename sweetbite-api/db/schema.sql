@@ -70,6 +70,27 @@ CREATE TABLE IF NOT EXISTS orders (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Coupon/delivery were calculated in the cart UI but never reached the
+-- order record — these columns let the server store and verify them
+-- instead of trusting whatever the browser last displayed.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(20);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_zone VARCHAR(40);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_price INTEGER;
+
+-- Backfill existing rows (placed before this change) so total_price is
+-- never left null for historical orders, then make it required.
+UPDATE orders SET total_price = price WHERE total_price IS NULL;
+ALTER TABLE orders ALTER COLUMN total_price SET NOT NULL;
+
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_discount_amount_check;
+ALTER TABLE orders ADD CONSTRAINT orders_discount_amount_check CHECK (discount_amount >= 0);
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_delivery_fee_check;
+ALTER TABLE orders ADD CONSTRAINT orders_delivery_fee_check CHECK (delivery_fee >= 0);
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_total_price_check;
+ALTER TABLE orders ADD CONSTRAINT orders_total_price_check CHECK (total_price >= 0);
+
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
 
