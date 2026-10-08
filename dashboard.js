@@ -115,6 +115,24 @@ function formatKES(amount) {
 }
 
 function buildOrderCardHTML(order) {
+  // order.price is the cake price before any discount/delivery fee;
+  // order.totalPrice is what the customer actually owes. They're the same
+  // number when no coupon or delivery zone was applied to the order.
+  const hasDiscount = order.couponCode && order.discountAmount > 0;
+  const hasDelivery = Boolean(order.deliveryZone);
+  const showBreakdown = hasDiscount || hasDelivery;
+
+  const priceLine = showBreakdown
+    ? `Price: ${formatKES(order.price)}`
+    : formatKES(order.price);
+
+  const breakdownLines = showBreakdown
+    ? `
+          ${hasDiscount ? `<br>Discount (${escapeHtml(order.couponCode)}): -${formatKES(order.discountAmount)}` : ''}
+          ${hasDelivery ? `<br>Delivery (${escapeHtml(order.deliveryZone)}): ${order.deliveryFee === 0 ? 'Free' : formatKES(order.deliveryFee)}` : ''}
+          <br><strong>Total: ${formatKES(order.totalPrice)}</strong>`
+    : '';
+
   return `
     <div class="dash-order-card" data-order-number="${escapeHtml(order.orderNumber)}">
       <div class="dash-order-main">
@@ -124,7 +142,7 @@ function buildOrderCardHTML(order) {
         <p class="dash-order-meta">
           ${escapeHtml(order.customerName)} · ${escapeHtml(order.customerPhone)}<br>
           ${escapeHtml(order.deliveryAddress)}<br>
-          Delivery: ${formatDashDate(order.deliveryDate)} · ${formatKES(order.price)}
+          Delivery: ${formatDashDate(order.deliveryDate)} · ${priceLine}${breakdownLines}
           ${order.notes ? `<br>Notes: ${escapeHtml(order.notes)}` : ''}
         </p>
       </div>
@@ -135,7 +153,6 @@ function buildOrderCardHTML(order) {
       </select>
     </div>`;
 }
-
 async function loadOrders() {
   ordersList.innerHTML = '<p class="dash-empty">Loading orders…</p>';
   try {
