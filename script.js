@@ -298,12 +298,33 @@ const modalPrice  = document.getElementById('modal-price');
 const modalBadge  = document.getElementById('modal-badge');
 const modalSubmitBtn = document.getElementById('modal-submit');
 
+// Coupon/delivery for the real order modal — separate state from the
+// cart's appliedCoupon/appliedDeliveryZone below, since the modal places
+// one order independently of whatever's sitting in the cart.
+const modalCouponInput      = document.getElementById('modal-coupon-input');
+const modalCouponApplyBtn   = document.getElementById('modal-coupon-apply-btn');
+const modalCouponForm       = document.getElementById('modal-coupon-form');
+const modalCouponApplied    = document.getElementById('modal-coupon-applied');
+const modalCouponAppliedText = document.getElementById('modal-coupon-applied-text');
+const modalCouponRemoveBtn  = document.getElementById('modal-coupon-remove-btn');
+const modalCouponErrorEl    = document.getElementById('err-modal-coupon');
+const modalDeliveryZoneSelect = document.getElementById('modal-delivery-zone-select');
+const modalDeliveryZoneErrorEl = document.getElementById('err-modal-delivery-zone');
+const modalBreakdownSubtotal = document.getElementById('modal-breakdown-subtotal');
+const modalBreakdownDiscountRow = document.getElementById('modal-breakdown-discount-row');
+const modalBreakdownDiscountLabel = document.getElementById('modal-breakdown-discount-label');
+const modalBreakdownDiscount = document.getElementById('modal-breakdown-discount');
+const modalBreakdownDeliveryRow = document.getElementById('modal-breakdown-delivery-row');
+const modalBreakdownDelivery = document.getElementById('modal-breakdown-delivery');
+const modalBreakdownTotal = document.getElementById('modal-breakdown-total');
+
+let modalAppliedCoupon = null; // { code, type, value, label }
+
 const cart = {};
 let pendingItem = null; // { name, price, cakeId }
 let lastOrder = null;   // the order object as returned by the API
 let appliedCoupon = null;
 let appliedDeliveryZone = null;
-
 const DELIVERY_ZONES = {
   'Westlands': 0,
   'Parklands': 200,
@@ -398,7 +419,98 @@ function computeCurrentPrice() {
 
 function updateModalPrice() {
   modalPrice.textContent = formatKES(computeCurrentPrice());
+  updateModalBreakdown();
 }
+
+// Mirrors the server's own calculation (see sweetbite-api/src/utils/pricing.js)
+// so the number shown here matches what actually gets charged — the server
+// recomputes this itself from the coupon code and zone, never trusting a
+// client-sent amount.
+function computeModalDiscount(price) {
+  if (!modalAppliedCoupon) return 0;
+  if (modalAppliedCoupon.type === 'percent') {
+    return Math.round(price * (modalAppliedCoupon.value / 100));
+  }
+  return Math.min(modalAppliedCoupon.value, price);
+}
+
+function computeModalDeliveryFee() {
+  const zone = modalDeliveryZoneSelect.value;
+  return zone && zone in DELIVERY_ZONES ? DELIVERY_ZONES[zone] : 0;
+}
+
+function updateModalBreakdown() {
+  const price = computeCurrentPrice();
+  const discount = computeModalDiscount(price);
+  const deliveryFee = computeModalDeliveryFee();
+  const total = Math.max(0, price - discount) + deliveryFee;
+
+  modalBreakdownSubtotal.textContent = formatKES(price);
+  modalBreakdownTotal.textContent = formatKES(total);
+
+  if (modalAppliedCoupon && discount > 0) {
+    modalBreakdownDiscountRow.classList.remove('hidden');
+    modalBreakdownDiscountLabel.textContent = `Discount (${modalAppliedCoupon.code})`;
+    modalBreakdownDiscount.textContent = `-${formatKES(discount)}`;
+  } else {
+    modalBreakdownDiscountRow.classList.add('hidden');
+  }
+
+  const zone = modalDeliveryZoneSelect.value;
+  if (zone) {
+    modalBreakdownDeliveryRow.classList.remove('hidden');
+    modalBreakdownDelivery.textContent = deliveryFee === 0 ? 'Free' : formatKES(deliveryFee);
+  } else {
+    modalBreakdownDeliveryRow.classList.add('hidden');
+  }
+}
+
+function applyModalCoupon() {
+  const code = modalCouponInput.value.trim().toUpperCase();
+  modalCouponErrorEl.textContent = '';
+  modalCouponInput.classList.remove('invalid');
+
+  if (!code) {
+    modalCouponErrorEl.textContent = 'Enter a coupon code.';
+    modalCouponInput.classList.add('invalid');
+    return;
+  }
+
+  const coupon = COUPONS[code];
+  if (!coupon) {
+    modalCouponErrorEl.textContent = 'Invalid or expired coupon code.';
+    modalCouponInput.classList.add('invalid');
+    showToast("⚠️ That coupon code isn't valid.", 'error');
+    return;
+  }
+
+  modalAppliedCoupon = { code, ...coupon };
+  modalCouponInput.value = '';
+  modalCouponForm.classList.add('hidden');
+  modalCouponApplied.classList.remove('hidden');
+  modalCouponAppliedText.textContent = `✅ ${code} applied — ${coupon.label}`;
+  updateModalBreakdown();
+  showToast(`🎉 Coupon ${code} applied!`);
+}
+
+function removeModalCoupon() {
+  modalAppliedCoupon = null;
+  modalCouponApplied.classList.add('hidden');
+  modalCouponForm.classList.remove('hidden');
+  modalCouponErrorEl.textContent = '';
+  modalCouponInput.classList.remove('invalid');
+  updateModalBreakdown();
+}
+
+modalCouponApplyBtn.addEventListener('click', applyModalCoupon);
+modalCouponInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    applyModalCoupon();
+  }
+});
+modalCouponRemoveBtn.addEventListener('click', removeModalCoupon);
+modalDeliveryZoneSelect.addEventListener('change', updateModalBreakdown);
 
 function setActivePill(row, key, value) {
   row.querySelectorAll('.option-pill').forEach(btn => {
@@ -440,7 +552,10 @@ function openModal(name, price, cakeId) {
   document.getElementById('order-address').value = '';
   document.getElementById('order-date').value    = '';
   document.getElementById('order-notes').value   = '';
-  setMinDate();
+  removeModalCoupon();
+  modalDeliveryZoneSelect.value = '';
+  modalDeliveryZoneErrorEl.textContent = '';
+  setMinDate();  
   const trigger = document.activeElement;
   overlay.classList.add('open');
   setTimeout(() => {
@@ -891,7 +1006,7 @@ modalSubmitBtn.addEventListener('click', async () => {
     const orderHeaders = { 'Content-Type': 'application/json' };
     if (authToken) orderHeaders['Authorization'] = `Bearer ${authToken}`;
 
-    const res = await fetch(`${API_BASE}/orders`, {
+       const res = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
       headers: orderHeaders,
       body: JSON.stringify({
@@ -903,9 +1018,10 @@ modalSubmitBtn.addEventListener('click', async () => {
         deliveryAddress: address,
         deliveryDate: dateInput,
         notes: notes || undefined,
+        couponCode: modalAppliedCoupon ? modalAppliedCoupon.code : undefined,
+        deliveryZone: modalDeliveryZoneSelect.value || undefined,
       }),
     });
-
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(apiErrorMessage(errData, `The order couldn't be placed (${res.status}).`));
@@ -916,17 +1032,26 @@ modalSubmitBtn.addEventListener('click', async () => {
 
     document.getElementById('confirm-order-id').textContent = lastOrder.orderNumber;
 
-    const rows = [
+       const rows = [
       ['Cake',     lastOrder.cakeName],
       ['Size',     `${lastOrder.size} (${CAKE_SIZE_SERVINGS[lastOrder.size] || ''})`],
       ['Frosting', lastOrder.frosting],
       ['Price',    formatKES(lastOrder.price)],
+    ];
+    if (lastOrder.couponCode && lastOrder.discountAmount > 0) {
+      rows.push(['Discount', `-${formatKES(lastOrder.discountAmount)} (${lastOrder.couponCode})`]);
+    }
+    if (lastOrder.deliveryZone) {
+      rows.push(['Delivery fee', lastOrder.deliveryFee === 0 ? 'Free' : formatKES(lastOrder.deliveryFee)]);
+    }
+    rows.push(['Total', formatKES(lastOrder.totalPrice)]);
+    rows.push(
       ['Name',     lastOrder.customerName],
       ['Phone',    lastOrder.customerPhone],
       ['Delivery', lastOrder.deliveryAddress],
       ['Date',     formatOrderDate(lastOrder.deliveryDate)],
-    ];
-    if (lastOrder.notes) rows.push(['Notes', lastOrder.notes]);
+    );
+    if (lastOrder.notes) rows.push(['Notes', lastOrder.notes]); 
 
     document.getElementById('confirm-details').innerHTML = rows
       .map(([k, v]) => `<div class="confirm-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`)
@@ -1028,7 +1153,14 @@ function buildOrderWhatsAppMessage(order) {
   msg += `Cake: ${order.cakeName}\n`;
   if (order.size)     msg += `Size: ${order.size} (${CAKE_SIZE_SERVINGS[order.size] || ''})\n`;
   if (order.frosting) msg += `Frosting: ${order.frosting}\n`;
-  msg += `Price: ${formatKES(order.price)}\n`;
+    msg += `Price: ${formatKES(order.price)}\n`;
+  if (order.couponCode && order.discountAmount > 0) {
+    msg += `Discount (${order.couponCode}): -${formatKES(order.discountAmount)}\n`;
+  }
+  if (order.deliveryZone) {
+    msg += `Delivery (${order.deliveryZone}): ${order.deliveryFee === 0 ? 'Free' : formatKES(order.deliveryFee)}\n`;
+  }
+  msg += `Total: ${formatKES(order.totalPrice)}\n`;
   msg += `Name: ${order.customerName}\n`;
   msg += `Phone: ${order.customerPhone}\n`;
   msg += `Delivery: ${order.deliveryAddress}\n`;

@@ -735,16 +735,54 @@
           <input type="date" id="order-date" name="date" />
           <span class="field-error" id="err-date"></span>
         </div>
-        <div class="field-group">
+            <div class="field-group">
           <label for="order-notes">Special instructions <span class="optional">(optional)</span></label>
           <input type="text" id="order-notes" name="notes" placeholder="e.g. Write Happy Birthday on top" maxlength="500" />
+        </div>
+
+        <div class="field-group">
+          <label for="modal-coupon-input">Coupon code <span class="optional">(optional)</span></label>
+          <div class="coupon-row" id="modal-coupon-form">
+            <input type="text" id="modal-coupon-input" name="coupon" placeholder="Coupon code" autocomplete="off" />
+            <button id="modal-coupon-apply-btn" type="button">Apply</button>
+          </div>
+          <div id="modal-coupon-applied" class="coupon-applied hidden">
+            <span id="modal-coupon-applied-text">✅ SWEET15 applied</span>
+            <button id="modal-coupon-remove-btn" type="button" aria-label="Remove coupon">&times;</button>
+          </div>
+          <span class="field-error" id="err-modal-coupon"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="modal-delivery-zone-select">Delivery zone <span class="optional">(optional)</span></label>
+          <select id="modal-delivery-zone-select">
+            <option value="">Select your area…</option>
+            <option value="Westlands">Westlands</option>
+            <option value="Parklands">Parklands</option>
+            <option value="CBD">CBD</option>
+            <option value="Kilimani">Kilimani</option>
+            <option value="Lavington">Lavington</option>
+            <option value="South B / South C">South B / South C</option>
+            <option value="Karen">Karen</option>
+            <option value="Runda">Runda</option>
+            <option value="Kasarani">Kasarani</option>
+            <option value="Ruaka">Ruaka</option>
+          </select>
+          <span class="field-error" id="err-modal-delivery-zone"></span>
+        </div>
+
+        <div class="modal-price-breakdown" id="modal-price-breakdown">
+          <div class="cart-subtotal-row"><span>Cake price</span><span id="modal-breakdown-subtotal">KSh 0</span></div>
+          <div class="cart-discount-row hidden" id="modal-breakdown-discount-row"><span id="modal-breakdown-discount-label">Discount</span><span id="modal-breakdown-discount">-KSh 0</span></div>
+          <div class="cart-delivery-row hidden" id="modal-breakdown-delivery-row"><span>Delivery</span><span id="modal-breakdown-delivery">KSh 0</span></div>
+          <div class="cart-total-row"><span>Total</span><span id="modal-breakdown-total">KSh 0</span></div>
         </div>
       </div>
 
       <div class="modal-footer">
         <button id="modal-submit" class="btn-primary">Confirm Order 🎉</button>
       </div>
-    </div>
+    </div>   
 
     <!--  Confirmation -->
     <div id="modal-step-2" class="hidden">

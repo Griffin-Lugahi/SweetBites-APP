@@ -2319,6 +2319,12 @@ body.dark .tracker-line {
   flex-direction: column;
   gap: 14px;
 }
+.modal-price-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+}
 .field-group {
   display: flex;
   flex-direction: column;
