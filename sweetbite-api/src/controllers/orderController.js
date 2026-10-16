@@ -71,6 +71,14 @@ async function createOrder(req, res) {
     return res.status(409).json({ error: 'Sorry, this cake is currently unavailable.' });
   }
 
+    const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+  if (!has(SIZE_MULTIPLIERS, size) || !has(FROSTING_ADDONS, frosting)) {
+    return res.status(400).json({ error: 'Invalid size or frosting.' });
+  }
+  if (!deliveryZone) {
+    return res.status(400).json({ error: 'Please choose a delivery zone.' });
+  }
+
   const sizeMult = SIZE_MULTIPLIERS[size];
   const frostingFee = FROSTING_ADDONS[frosting];
   const price = Math.round(cake.price * sizeMult) + frostingFee;

@@ -510,7 +510,10 @@ modalCouponInput.addEventListener('keydown', (e) => {
   }
 });
 modalCouponRemoveBtn.addEventListener('click', removeModalCoupon);
-modalDeliveryZoneSelect.addEventListener('change', updateModalBreakdown);
+modalDeliveryZoneSelect.addEventListener('change', () => {
+  modalDeliveryZoneErrorEl.textContent = '';
+  updateModalBreakdown();
+});
 
 function setActivePill(row, key, value) {
   row.querySelectorAll('.option-pill').forEach(btn => {
@@ -597,7 +600,13 @@ function validateForm() {
   else if (!/^[\d\s\+\-\(\)]{7,30}$/.test(phone)) { setError('phone', 'Enter a valid phone number.'); valid = false; }
   if (!address)                       { setError('address', 'Please enter a delivery address.'); valid = false; }
   if (!date)                          { setError('date', 'Please choose a delivery date.'); valid = false; }
-  else if (date < document.getElementById('order-date').min) { setError('date', 'Please choose a date from tomorrow onwards.'); valid = false; }
+    else if (date < document.getElementById('order-date').min) { setError('date', 'Please choose a date from tomorrow onwards.'); valid = false; }
+
+  modalDeliveryZoneErrorEl.textContent = '';
+  if (!modalDeliveryZoneSelect.value) {
+    modalDeliveryZoneErrorEl.textContent = 'Please choose your delivery area.';
+    valid = false;
+  }
   return valid;
 }
 
