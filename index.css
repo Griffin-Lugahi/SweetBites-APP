@@ -411,6 +411,7 @@ img { display: block; max-width: 100%; }
 }
 .coupon-row input {
   flex: 1;
+  min-width: 0;
   padding: 9px 12px;
   border: 1.5px solid #e0d0c4;
   border-radius: var(--radius-sm);
@@ -3254,4 +3255,24 @@ body.dark .account-logout-btn {
 .account-dashboard-link:hover {
   background: var(--primary);
   color: #fff;
+}
+.field-group select {
+  padding: 11px 14px;
+  border: 1.5px solid #e0d0c4;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--bg);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.field-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(210,105,30,0.12);
+}
+body.dark .field-group select {
+  background: #1a1008;
+  border-color: #4a2e10;
+  color: var(--text);
 }
