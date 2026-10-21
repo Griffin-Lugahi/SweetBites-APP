@@ -38,7 +38,6 @@ const HOUR = 60 * 60 * 1000;
 app.use('/api', limiter(MIN15, 300));
 app.use('/api/auth/login', limiter(MIN15, 10, 'Too many login attempts. Try again in 15 minutes.'));
 app.use('/api/auth/register', limiter(HOUR, 10));
-app.post('/api/orders', limiter(HOUR, 20));
 app.post('/api/contact', limiter(HOUR, 10));
 // The tracking window re-checks every 8 seconds, so this allows plenty of room.
 app.get('/api/orders/:orderNumber', limiter(MIN15, 300));

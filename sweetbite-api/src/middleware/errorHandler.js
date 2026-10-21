@@ -20,7 +20,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
     });
   }
 
-  const status = err.status || 500;
+  const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
   const message = status === 500 && env.nodeEnv === 'production'
     ? 'Something went wrong.'
     : err.message;

@@ -39,7 +39,15 @@ const createValidators = [
     .trim().isLength({ min: 1, max: 120 }).withMessage('Please enter your full name (max 120 characters).'),
   body('customerPhone')
     .isString().withMessage('Please enter a phone number.').bail()
-    .trim().matches(/^[\d\s+\-()]{7,30}$/).withMessage('Enter a valid phone number (7-30 characters: digits, spaces, + - ( ) ).'),
+    .trim().matches(/^[\d\s+\-()]{7,30}$/).withMessage('Enter a valid phone number (7-30 characters: digits, spaces, + - ( ) ).').bail()
+    .custom((value) => {
+      const digits = (value.match(/\d/g) || []).length;
+      return digits >= 9 && digits <= 15;
+    }).withMessage('Enter a valid phone number with at least 9 digits.').bail()
+    .custom((value) => {
+      const digits = (value.match(/\d/g) || []).length;
+      return digits >= 9 && digits <= 15;
+    }).withMessage('Enter a valid phone number with at least 9 digits.'),
   body('deliveryAddress')
     .isString().withMessage('Please enter a delivery address.').bail()
     .trim().isLength({ min: 1, max: 300 }).withMessage('Please enter a delivery address (max 300 characters).'),
@@ -59,8 +67,7 @@ const createValidators = [
     .optional({ checkFalsy: true })
     .isString().withMessage('Notes must be text.').bail()
     .trim().isLength({ max: 500 }).withMessage('Special instructions can be at most 500 characters.'),
-  // Both optional: an order can go through with no coupon and no delivery
-  // zone selected. If present, they must match a code/zone we recognize —
+
   // the discount and fee themselves are computed server-side, never
   // accepted from the request.
   body('couponCode')
@@ -70,7 +77,7 @@ const createValidators = [
     .customSanitizer((value) => value.toUpperCase())
     .isIn(Object.keys(COUPONS)).withMessage('Invalid or expired coupon code.'),
   body('deliveryZone')
-    .optional({ checkFalsy: true })
+    .exists({ checkFalsy: true }).withMessage('Please choose a delivery zone.').bail()
     .isString().withMessage('Delivery zone must be text.').bail()
     .trim()
     .isIn(Object.keys(DELIVERY_ZONES)).withMessage('Please select a valid delivery zone.'),
