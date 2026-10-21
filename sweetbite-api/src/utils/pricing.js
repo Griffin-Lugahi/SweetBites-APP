@@ -1,11 +1,10 @@
-// Coupon and delivery-zone data, mirrored from the frontend's script.js.
-// The frontend copy is for instant UI feedback only — this file is the
-// source of truth the server actually charges against, so a request can
-// never supply its own discount amount or delivery fee and have it trusted.
+// expires: last day the code works (Nairobi date, YYYY-MM-DD, inclusive)
+// maxUses: total orders that may use it (cancelled orders don't count)
+// firstOrderOnly: only for a phone number that has never ordered
 const COUPONS = {
-  SWEET15: { type: 'percent', value: 15 },
-  WELCOME10: { type: 'percent', value: 10 },
-  SAVE5: { type: 'flat', value: 500 },
+  SWEET15: { type: 'percent', value: 15, expires: '2026-10-31' },
+  WELCOME10: { type: 'percent', value: 10, firstOrderOnly: true },
+  SAVE5: { type: 'flat', value: 500, maxUses: 50, expires: '2026-12-31' },
 };
 
 const DELIVERY_ZONES = {

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
-const { computeDiscount, computeDeliveryFee } = require('../utils/pricing');
+const { COUPONS, computeDiscount, computeDeliveryFee } = require('../utils/pricing');
+const { nairobiDatePlusDays } = require('../utils/dates');
 
 const SIZE_MULTIPLIERS = { Small: 0.7, Medium: 1, Large: 1.5 };
 const FROSTING_ADDONS = { 'Buttercream': 0, 'Chocolate Ganache': 500, 'Fresh Cream': 300 };
@@ -54,7 +55,43 @@ function toTrackingView(row) {
     status: row.status,
   };
 }
+// Returns a message if this coupon can't be used right now, otherwise null.
+async function couponProblem(code, customerPhone) {
+  if (!code) return null;
+  const coupon = COUPONS[code];
+  if (!coupon) return 'Invalid or expired coupon code.';
 
+  if (coupon.expires && nairobiDatePlusDays(0) > coupon.expires) {
+    return 'Sorry, this coupon has expired.';
+  }
+
+  if (coupon.maxUses) {
+    const used = await pool.query(
+      "SELECT COUNT(*)::int AS n FROM orders WHERE coupon_code = $1 AND status <> 'cancelled'",
+      [code]
+    );
+    if (used.rows[0].n >= coupon.maxUses) {
+      return 'Sorry, this coupon has been fully used.';
+    }
+  }
+
+  if (coupon.firstOrderOnly) {
+    // Compare the last 9 digits, so 0712 345 678 and +254712345678 match.
+    const last9 = String(customerPhone).replace(/\D/g, '').slice(-9);
+    const previous = await pool.query(
+      `SELECT 1 FROM orders
+       WHERE RIGHT(regexp_replace(customer_phone, '\\D', '', 'g'), 9) = $1
+         AND status <> 'cancelled'
+       LIMIT 1`,
+      [last9]
+    );
+    if (previous.rows.length > 0) {
+      return 'This coupon is for first orders only.';
+    }
+  }
+
+  return null;
+}
 async function createOrder(req, res) {
   const {
     cakeId, size, frosting,
@@ -86,6 +123,10 @@ async function createOrder(req, res) {
   // Computed server-side from the validated code/zone — never from a
   // client-supplied amount, so a tampered request can't discount itself.
   const normalizedCoupon = couponCode ? couponCode.trim().toUpperCase() : null;
+  const problem = await couponProblem(normalizedCoupon, customerPhone);
+  if (problem) {
+    return res.status(400).json({ error: problem });
+  }
   const discountAmount = computeDiscount(price, normalizedCoupon);
   const deliveryFee = computeDeliveryFee(deliveryZone);
   const totalPrice = Math.max(0, price - discountAmount) + deliveryFee;
