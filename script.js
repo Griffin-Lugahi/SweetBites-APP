@@ -1919,11 +1919,17 @@ function buildCakeCardHTML(cake) {
     </div>`;
 }
 
-async function loadCakes() {
+function fetchWithTimeout(url, ms = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function loadCakes(attempt = 1) {
   pricingContainer.innerHTML = '<p class="cake-filter-empty">Loading our cake collection…</p>';
 
   try {
-    const res = await fetch(`${API_BASE}/cakes`);
+    const res = await fetchWithTimeout(`${API_BASE}/cakes`);
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const data = await res.json();
     const cakes = data.cakes || [];
@@ -1939,10 +1945,15 @@ async function loadCakes() {
     applyCakeFilter();
   } catch (err) {
     console.error('Failed to load cakes:', err);
+    if (attempt < 3) {
+      pricingContainer.innerHTML = '<p class="cake-filter-empty">Our kitchen is waking up… the menu can take up to a minute to load on a first visit. 🧁</p>';
+      setTimeout(() => loadCakes(attempt + 1), 6000);
+      return;
+    }
     pricingContainer.innerHTML = `
       <p class="cake-filter-empty">
-        Couldn't load the cake menu right now. Make sure the backend server is running
-        (npm run dev in sweetbite-api), then refresh this page.
+        We couldn't load the cake menu right now. Please try again, or order via WhatsApp.<br>
+        <button type="button" id="retry-cakes-btn" class="btn-secondary" style="width:auto;padding:10px 22px;margin-top:12px">Try again</button>
       </p>`;
   }
 }
@@ -1970,6 +1981,10 @@ pricingContainer.addEventListener('click', (e) => {
   if (card) {
     openQuickview(card);
   }
+});
+
+pricingContainer.addEventListener('click', (e) => {
+  if (e.target.closest('#retry-cakes-btn')) loadCakes();
 });
 
 loadCakes();
