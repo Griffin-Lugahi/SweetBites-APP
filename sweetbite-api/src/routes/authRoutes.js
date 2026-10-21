@@ -13,6 +13,7 @@ const router = Router();
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many attempts. Try again in a few minutes.' },
@@ -68,6 +69,7 @@ router.patch(
 
 router.post(
   '/change-password',
+  authLimiter,
   requireAuth,
   [
     body('currentPassword').isString().bail().isLength({ min: 1, max: 1000 }),
