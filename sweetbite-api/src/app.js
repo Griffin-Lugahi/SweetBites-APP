@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const pool = require('./config/db');
 
 const env = require('./config/env');
 const routes = require('./routes');
@@ -48,7 +49,14 @@ app.use('/api/auth/register', limiter(HOUR, 10));
 // The tracking window re-checks every 8 seconds, so this allows plenty of room.
 app.get('/api/orders/:orderNumber', limiter(MIN15, 600));
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ ok: true, db: true });
+  } catch (err) {
+    res.status(503).json({ ok: false, db: false });
+  }
+});
 
 app.use('/api', routes);
 
